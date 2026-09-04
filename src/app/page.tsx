@@ -1180,7 +1180,7 @@ function VariantA() {
       open={addClauseOpen}
       onClose={() => setAddClauseOpen(false)}
       onConfirm={handleAddClauses}
-      excludeIds={new Set(sections.flatMap(s => s.clauses.map(c => c.libraryId)))}
+      excludeIds={new Set(sections.flatMap(s => s.clauses.map(c => c.libraryId).filter((id): id is string => !!id)))}
     />
     </>
   );
