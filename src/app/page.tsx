@@ -313,10 +313,11 @@ const CLAUSE_CATALOG: CatalogClause[] = [
 
 let _clauseIdCounter = 100;
 
-function AddClauseDialog({ open, onClose, onConfirm }: {
+function AddClauseDialog({ open, onClose, onConfirm, excludeIds = new Set() }: {
   open: boolean;
   onClose: () => void;
   onConfirm: (clauses: CatalogClause[]) => void;
+  excludeIds?: Set<string>;
 }) {
   const [searchText, setSearchText] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -327,11 +328,18 @@ function AddClauseDialog({ open, onClose, onConfirm }: {
   ]);
 
   const tablePaddingHook = useCallback((hooks: any) => {
-    hooks.getCellProps.push((props: any) => [props, { style: { ...props.style, paddingInlineStart: '0.5rem' } }]);
-    hooks.getHeaderProps.push((props: any) => [props, { style: { ...props.style, paddingInlineStart: '0.5rem' } }]);
+    hooks.getCellProps.push((props: any, { cell }: any) => {
+      if (cell?.column?.id === '__ui5wcr__internal_selection_column') return [props];
+      return [props, { style: { ...props.style, paddingInlineStart: '1rem', paddingInlineEnd: '1rem' } }];
+    });
+    hooks.getHeaderProps.push((props: any, meta: any) => {
+      if (meta?.column?.id === '__ui5wcr__internal_selection_column') return [props];
+      return [props, { style: { ...props.style, paddingInlineStart: '1rem', paddingInlineEnd: '1rem' } }];
+    });
   }, []);
 
   const filtered = CLAUSE_CATALOG.filter((c) => {
+    if (excludeIds.has(c.libraryId)) return false;
     if (!searchText.trim()) return true;
     const q = searchText.toLowerCase();
     return c.title.toLowerCase().includes(q) || c.libraryId.toLowerCase().includes(q);
@@ -446,8 +454,8 @@ function AddClauseDialog({ open, onClose, onConfirm }: {
             tableHooks={[tablePaddingHook]}
             data={filtered}
             selectionMode="Multiple"
-            visibleRows={5}
-            minRows={5}
+            visibleRows={Math.max(1, filtered.length)}
+            minRows={Math.max(1, filtered.length)}
             rowHeight={60}
             headerRowHeight={32}
             selectedRowIds={Object.fromEntries(
@@ -1172,6 +1180,7 @@ function VariantA() {
       open={addClauseOpen}
       onClose={() => setAddClauseOpen(false)}
       onConfirm={handleAddClauses}
+      excludeIds={new Set(sections.flatMap(s => s.clauses.map(c => c.libraryId)))}
     />
     </>
   );
@@ -1362,7 +1371,7 @@ export default function ImportReviewPage() {
         <ShellBarItem icon="sys-help" text="Help Center" />
       </ShellBar>
 
-      <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <SideNavigation
           collapsed={navCollapsed}
           style={{ flexShrink: 0 }}
@@ -1421,6 +1430,8 @@ export default function ImportReviewPage() {
             <SideNavigationSubItem text="Dashboards" />
           </SideNavigationItem>
         </SideNavigation>
+
+        <div style={{ width: '1px', flexShrink: 0, background: '#c2cdd6', boxShadow: '2px 0 8px 0 rgba(34,53,72,.2)' }} />
 
         {/* Main content column */}
         <div style={{ flex: 1, minHeight: 0, background: 'var(--sapBackgroundColor)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
